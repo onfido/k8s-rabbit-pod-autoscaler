@@ -1,0 +1,53 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: rabbit-pod-autoscaler
+  namespace: kube-system
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: rabbit-pod-autoscaler
+      annotations:
+        scheduler.alpha.kubernetes.io/tolerations: |
+          [
+            {
+              "key": "dedicated",
+              "operator": "Equal",
+              "value": "master",
+              "effect": "NoSchedule"
+            }
+          ]
+    spec:
+      nodeSelector:
+        kubernetes.io/role: master
+      containers:
+      - name: rabbit-pod-autoscaler
+        image: onfido/k8s-rabbit-pod-autoscaler
+        imagePullPolicy: Always
+        resources:
+          requests:
+            cpu: 100m
+            memory: 50Mi
+        env:
+          - name: INTERVAL
+            value: "30"
+          - name: RABBIT_HOST
+            value: "http://rabbitmq.example.com"
+          - name: RABBIT_USER
+            valueFrom:
+              secretKeyRef:
+                name: rabbit-pod-autoscaler
+                key: rabbit-user
+          - name: RABBIT_PASS
+            valueFrom:
+              secretKeyRef:
+                name: rabbit-pod-autoscaler
+                key: rabbit-pass
+          - name: AUTOSCALING
+            value: >
+              3|10|5|development|example|example.queue;
+              3|5|3|development|example2|example2.queue
+          - name: SLACK_HOOK
+            value: SLACK_HOOK
