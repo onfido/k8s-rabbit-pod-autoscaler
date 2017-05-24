@@ -27,23 +27,37 @@ while true; do
         if [[ $currentPods != "" ]]; then
           if [[ $requiredPods -ne $currentPods ]]; then
             desiredPods=""
+            # Flag used to prevent scaling down or up if currentPods are already min or max respectively.
+            scale=0
 
             if [[ $requiredPods -le $minPods ]]; then
               desiredPods=$minPods
+
+              # If currentPods are already at min, do not scale down
+              if [[ $currentPods -eq $minPods ]]; then
+                scale=1
+              fi
             elif [[ $requiredPods -ge $maxPods ]]; then
               desiredPods=$maxPods
+
+              # If currentPods are already at max, do not scale up
+              if [[ $currentPods -eq $maxPods ]]; then
+                scale=1
+              fi
             else
               desiredPods=$requiredPods
             fi
 
-            kubectl scale -n $namespace --replicas=$desiredPods deployment/$deployment 1> /dev/null
+            if [[ $scale -eq 0 ]]; then
+              kubectl scale -n $namespace --replicas=$desiredPods deployment/$deployment 1> /dev/null
 
-            if [[ $? -eq 0 ]]; then
-              echo "Scaled $deployment to $desiredPods pods ($queueMessages msg in RabbitMQ)"
-              notifySlack "Scaled $deployment to $desiredPods pods ($queueMessages msg in RabbitMQ)"
-            else
-              echo "Failed to scale $deployment pods."
-              notifySlack "Failed to scale $deployment pods."
+              if [[ $? -eq 0 ]]; then
+                echo "Scaled $deployment to $desiredPods pods ($queueMessages msg in RabbitMQ)"
+                notifySlack "Scaled $deployment to $desiredPods pods ($queueMessages msg in RabbitMQ)"
+              else
+                echo "Failed to scale $deployment pods."
+                notifySlack "Failed to scale $deployment pods."
+              fi
             fi
           fi
         else
