@@ -15,9 +15,10 @@ while true; do
   for autoscaler in "${autoscalingArr[@]}"; do
     IFS='|' read minPods maxPods mesgPerPod namespace deployment queueName <<< "$autoscaler"
 
-    queueMessages=$(curl -s -u $RABBIT_USER:$RABBIT_PASS $RABBIT_HOST:15672/api/queues/%2f/$queueName | jq '.messages')
+    queueMessagesJson=$(curl -s -S -u $RABBIT_USER:$RABBIT_PASS $RABBIT_HOST:15672/api/queues/%2f/$queueName)
 
-    if [[ $queueMessages != "" ]]; then
+    if [[ $? -eq 0 ]]; then
+      queueMessages=$(echo $queueMessagesJson | jq '.messages')
       requiredPods=$(echo "$queueMessages/$mesgPerPod" | bc 2> /dev/null)
 
       if [[ $requiredPods != "" ]]; then
