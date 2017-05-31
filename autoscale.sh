@@ -22,7 +22,7 @@ while true; do
       requiredPods=$(echo "$queueMessages/$mesgPerPod" | bc 2> /dev/null)
 
       if [[ $requiredPods != "" ]]; then
-        currentPods=$(kubectl -n $namespace describe deploy $deployment 2> /dev/null | \
+        currentPods=$(kubectl -n $namespace describe deploy $deployment | \
           grep desired | awk '{print $2}' | head -n1)
 
         if [[ $currentPods != "" ]]; then
