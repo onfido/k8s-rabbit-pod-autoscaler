@@ -1,11 +1,35 @@
 #!/bin/bash
 
+namespace=""
+deployment=""
+
+getCurrentPods() {
+  current=$(kubectl -n $namespace describe deploy $deployment | \
+    grep desired | awk '{print $2}' | head -n1)
+
+  if [[ $current != "" ]]; then
+    echo $current
+  else
+    # If kube api request fails, retry after 3 seconds
+    sleep 3
+
+    current=$(kubectl -n $namespace describe deploy $deployment | \
+      grep desired | awk '{print $2}' | head -n1)
+
+    if [[ $current != "" ]]; then
+      echo $current
+    else
+      echo ""
+    fi
+  fi
+}
+
 notifySlack() {
   if [ -z "$SLACK_HOOK" ]; then
     return 0
   fi
 
-  curl -s -X POST --data-urlencode 'payload={"text": "'"$1"'"}' $SLACK_HOOK > /dev/null
+  curl -s --retry 3 --retry-delay 3 -X POST --data-urlencode 'payload={"text": "'"$1"'"}' $SLACK_HOOK > /dev/null
 }
 
 autoscalingNoWS=$(echo "$AUTOSCALING" | tr -d "[:space:]")
@@ -15,15 +39,15 @@ while true; do
   for autoscaler in "${autoscalingArr[@]}"; do
     IFS='|' read minPods maxPods mesgPerPod namespace deployment queueName <<< "$autoscaler"
 
-    queueMessagesJson=$(curl -s -S -u $RABBIT_USER:$RABBIT_PASS $RABBIT_HOST:15672/api/queues/%2f/$queueName)
+    queueMessagesJson=$(curl -s -S --retry 3 --retry-delay 3 -u $RABBIT_USER:$RABBIT_PASS \
+      $RABBIT_HOST:15672/api/queues/%2f/$queueName)
 
     if [[ $? -eq 0 ]]; then
       queueMessages=$(echo $queueMessagesJson | jq '.messages')
       requiredPods=$(echo "$queueMessages/$mesgPerPod" | bc 2> /dev/null)
 
       if [[ $requiredPods != "" ]]; then
-        currentPods=$(kubectl -n $namespace describe deploy $deployment | \
-          grep desired | awk '{print $2}' | head -n1)
+        currentPods=$(getCurrentPods)
 
         if [[ $currentPods != "" ]]; then
           if [[ $requiredPods -ne $currentPods ]]; then
