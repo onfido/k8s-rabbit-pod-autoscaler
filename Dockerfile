@@ -10,8 +10,8 @@ RUN cd /usr/local/bin \
 COPY autoscale.sh /bin/autoscale.sh
 RUN chmod +x /bin/autoscale.sh
 
-RUN curl "https://raw.githubusercontent.com/adrianchifor/k8s-warden/master/entrypoint-apk/warden-init" -o "warden-init" \
-    && chmod +x warden-init
+RUN curl "https://raw.githubusercontent.com/adrianchifor/k8s-warden/master/entrypoint-apk/warden-init" -o "/bin/warden-init" \
+    && chmod +x /bin/warden-init
 
-ENTRYPOINT [". ./warden-init"]
+ENTRYPOINT [".", "/bin/warden-init"]
 CMD ["bash", "/bin/autoscale.sh"]
