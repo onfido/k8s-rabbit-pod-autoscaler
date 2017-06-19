@@ -39,6 +39,9 @@ while true; do
   for autoscaler in "${autoscalingArr[@]}"; do
     IFS='|' read minPods maxPods mesgPerPod namespace deployment queueName <<< "$autoscaler"
 
+    echo $RABBIT_USER
+    echo $RABBIT_PASS
+
     queueMessagesJson=$(curl -s -S --retry 3 --retry-delay 3 -u $RABBIT_USER:$RABBIT_PASS \
       $RABBIT_HOST:15672/api/queues/%2f/$queueName)
 
