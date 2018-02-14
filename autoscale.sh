@@ -74,6 +74,11 @@ while true; do
             fi
 
             if [[ $scale -eq 0 ]]; then
+              # To slow down the scale-down policy, scale down in steps (reduce 10% on every iteration)
+              if [[ $desiredPods -lt $currentPods ]]; then
+                desiredPods=$(awk "BEGIN { print int( ($currentPods - $desiredPods) * 0.9 + $desiredPods ) }")
+              fi
+
               kubectl scale -n $namespace --replicas=$desiredPods deployment/$deployment 1> /dev/null
 
               if [[ $? -eq 0 ]]; then
@@ -97,8 +102,6 @@ while true; do
       echo "Failed to get queue messages from $RABBIT_HOST for $deployment."
       notifySlack "Failed to get queue messages from $RABBIT_HOST for $deployment."
     fi
-
-    sleep 3
   done
 
   sleep $INTERVAL
