@@ -4,24 +4,20 @@ namespace=""
 deployment=""
 
 getCurrentPods() {
-  current=$(kubectl -n $namespace describe deploy $deployment | \
-    grep desired | awk '{print $2}' | head -n1)
-
-  if [[ $current != "" ]]; then
-    echo $current
-  else
-    # If kube api request fails, retry after 3 seconds
-    sleep 3
-
+  # Retry up to 5 times if kubectl fails
+  for i in $(seq 5); do
     current=$(kubectl -n $namespace describe deploy $deployment | \
       grep desired | awk '{print $2}' | head -n1)
 
     if [[ $current != "" ]]; then
       echo $current
-    else
-      echo ""
+      return 0
     fi
-  fi
+
+    sleep 3
+  done
+
+  echo ""
 }
 
 notifySlack() {
