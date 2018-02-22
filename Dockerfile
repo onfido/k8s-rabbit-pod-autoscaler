@@ -10,4 +10,7 @@ RUN cd /usr/local/bin \
 COPY autoscale.sh /bin/autoscale.sh
 RUN chmod +x /bin/autoscale.sh
 
+ENV INTERVAL 30
+ENV LOGS HIGH
+
 CMD ["bash", "/bin/autoscale.sh"]

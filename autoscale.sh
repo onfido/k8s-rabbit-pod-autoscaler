@@ -3,7 +3,7 @@
 namespace=""
 deployment=""
 
-getCurrentPods() {
+function getCurrentPods() {
   # Retry up to 5 times if kubectl fails
   for i in $(seq 5); do
     current=$(kubectl -n $namespace describe deploy $deployment | \
@@ -20,7 +20,7 @@ getCurrentPods() {
   echo ""
 }
 
-notifySlack() {
+function notifySlack() {
   if [ -z "$SLACK_HOOK" ]; then
     return 0
   fi
@@ -78,24 +78,38 @@ while true; do
               kubectl scale -n $namespace --replicas=$desiredPods deployment/$deployment 1> /dev/null
 
               if [[ $? -eq 0 ]]; then
-                echo "Scaled $deployment to $desiredPods pods ($queueMessages msg in RabbitMQ)"
-                notifySlack "Scaled $deployment to $desiredPods pods ($queueMessages msg in RabbitMQ)"
+                # Adjust logging and Slack notifications based on LOGS env and desiredPods number
+                log=false
+                avgPods=$(awk "BEGIN { print int( ($minPods + $maxPods) / 2 ) }")
+
+                if [[ $LOGS == "HIGH" ]]; then
+                  log=true
+                elif [[ $LOGS == "MEDIUM" && ($desiredPods -eq $minPods || $desiredPods -eq $avgPods || $desiredPods -eq $maxPods) ]]; then
+                  log=true
+                elif [[ $LOGS == "LOW" && ($desiredPods -eq $minPods || $desiredPods -eq $maxPods) ]]; then
+                  log=true
+                fi
+
+                if $log ; then
+                  echo "$(date) -- Scaled $deployment to $desiredPods pods ($queueMessages msg in RabbitMQ)"
+                  notifySlack "Scaled $deployment to $desiredPods pods ($queueMessages msg in RabbitMQ)"
+                fi
               else
-                echo "Failed to scale $deployment pods."
+                echo "$(date) -- Failed to scale $deployment pods."
                 notifySlack "Failed to scale $deployment pods."
               fi
             fi
           fi
         else
-          echo "Failed to get current pods number for $deployment."
+          echo "$(date) -- Failed to get current pods number for $deployment."
           notifySlack "Failed to get current pods number for $deployment."
         fi
       else
-        echo "Failed to calculate required pods for $deployment."
+        echo "$(date) -- Failed to calculate required pods for $deployment."
         notifySlack "Failed to calculate required pods for $deployment."
       fi
     else
-      echo "Failed to get queue messages from $RABBIT_HOST for $deployment."
+      echo "$(date) -- Failed to get queue messages from $RABBIT_HOST for $deployment."
       notifySlack "Failed to get queue messages from $RABBIT_HOST for $deployment."
     fi
   done
