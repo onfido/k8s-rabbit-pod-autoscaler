@@ -70,8 +70,8 @@ spec:
                 key: rabbit-pass
           - name: AUTOSCALING
             value: >
-              3|10|5|development|example|example.queue;
-              3|5|3|development|example2|example2.queue
+              3|10|5|development|example|vhost|example.queue;
+              3|5|3|development|example2|vhost|example2.queue
           - name: LOGS
             value: HIGH
           - name: SLACK_HOOK
