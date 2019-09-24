@@ -35,7 +35,7 @@ while true; do
   for autoscaler in "${autoscalingArr[@]}"; do
     IFS='|' read minPods maxPods mesgPerPod namespace deployment queueName <<< "$autoscaler"
 
-    queueMessagesJson=$(curl -s -S --retry 3 --retry-delay 3 -u $RABBIT_USER:$RABBIT_PASS \
+    queueMessagesJson=$(curl -s -S --retry 3 --retry-delay 3 -u "$RABBIT_USER:$RABBIT_PASS" \
       $RABBIT_HOST:15672/api/queues/%2f/$queueName)
 
     if [[ $? -eq 0 ]]; then
@@ -91,26 +91,26 @@ while true; do
                 fi
 
                 if $log ; then
-                  echo "$(date) -- Scaled $deployment to $desiredPods pods ($queueMessages msg in RabbitMQ)"
-                  notifySlack "Scaled $deployment to $desiredPods pods ($queueMessages msg in RabbitMQ)"
+                  echo "$(date) -- Scaled $namespace: $deployment to $desiredPods pods ($queueMessages msg in RabbitMQ)"
+                  notifySlack "Scaled $namespace: $deployment to $desiredPods pods ($queueMessages msg in RabbitMQ)"
                 fi
               else
-                echo "$(date) -- Failed to scale $deployment pods."
-                notifySlack "Failed to scale $deployment pods."
+                echo "$(date) -- Failed to scale $namespace: $deployment pods."
+                notifySlack "Failed to scale $namespace: $deployment pods."
               fi
             fi
           fi
         else
-          echo "$(date) -- Failed to get current pods number for $deployment."
-          notifySlack "Failed to get current pods number for $deployment."
+          echo "$(date) -- Failed to get current pods number for $namespace: $deployment."
+          notifySlack "Failed to get current pods number for $namespace: $deployment."
         fi
       else
-        echo "$(date) -- Failed to calculate required pods for $deployment."
-        notifySlack "Failed to calculate required pods for $deployment."
+        echo "$(date) -- Failed to calculate required pods for $namespace: $deployment."
+        notifySlack "Failed to calculate required pods for $namespace: $deployment."
       fi
     else
-      echo "$(date) -- Failed to get queue messages from $RABBIT_HOST for $deployment."
-      notifySlack "Failed to get queue messages from $RABBIT_HOST for $deployment."
+      echo "$(date) -- Failed to get queue messages from $RABBIT_HOST for $namespace: $deployment."
+      notifySlack "Failed to get queue messages from $RABBIT_HOST for $namespace: $deployment."
     fi
   done
 
