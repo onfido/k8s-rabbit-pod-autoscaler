@@ -1,10 +1,10 @@
-FROM alpine
+FROM alpine:3.9
 
-RUN apk add --update curl bash jq bc \
+RUN apk add --no-cache --update curl bash jq bc \
     && rm -rf /var/cache/apk/*
 
 RUN cd /usr/local/bin \
-    && curl -O https://storage.googleapis.com/kubernetes-release/release/v1.6.2/bin/linux/amd64/kubectl \
+    && curl -O https://storage.googleapis.com/kubernetes-release/release/v1.14.6/bin/linux/amd64/kubectl \
     && chmod 755 /usr/local/bin/kubectl
 
 COPY autoscale.sh /bin/autoscale.sh

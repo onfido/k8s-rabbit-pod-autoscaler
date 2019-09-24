@@ -5,7 +5,7 @@ metadata:
   name: rabbit-pod-autoscaler
 rules:
   - apiGroups: ["*"]
-    resources: ["deployments"]
+    resources: ["deployments", "deployments/scale"]
     verbs: ["get", "list", "update"]
 ---
 apiVersion: v1
@@ -23,9 +23,9 @@ roleRef:
   kind: ClusterRole
   name: rabbit-pod-autoscaler
 subjects:
-- kind: ServiceAccount
-  name: rabbit-pod-autoscaler
-  namespace: kube-system
+  - kind: ServiceAccount
+    name: rabbit-pod-autoscaler
+    namespace: kube-system
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
@@ -42,37 +42,37 @@ spec:
       nodeSelector:
         kubernetes.io/role: master
       tolerations:
-      - effect: NoSchedule
-        key: node-role.kubernetes.io/master
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/master
       serviceAccountName: rabbit-pod-autoscaler
       containers:
-      - name: rabbit-pod-autoscaler
-        image: onfido/k8s-rabbit-pod-autoscaler
-        imagePullPolicy: Always
-        resources:
-          requests:
-            cpu: 100m
-            memory: 50Mi
-        env:
-          - name: INTERVAL
-            value: "30"
-          - name: RABBIT_HOST
-            value: "http://rabbitmq.example.com"
-          - name: RABBIT_USER
-            valueFrom:
-              secretKeyRef:
-                name: rabbit-pod-autoscaler
-                key: rabbit-user
-          - name: RABBIT_PASS
-            valueFrom:
-              secretKeyRef:
-                name: rabbit-pod-autoscaler
-                key: rabbit-pass
-          - name: AUTOSCALING
-            value: >
-              3|10|5|development|example|example.queue;
-              3|5|3|development|example2|example2.queue
-          - name: LOGS
-            value: HIGH
-          - name: SLACK_HOOK
-            value: SLACK_HOOK
+        - name: rabbit-pod-autoscaler
+          image: onfido/k8s-rabbit-pod-autoscaler
+          imagePullPolicy: Always
+          resources:
+            requests:
+              cpu: 100m
+              memory: 50Mi
+          env:
+            - name: INTERVAL
+              value: "30"
+            - name: RABBIT_HOST
+              value: "http://rabbitmq.example.com"
+            - name: RABBIT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: rabbit-pod-autoscaler
+                  key: rabbit-user
+            - name: RABBIT_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: rabbit-pod-autoscaler
+                  key: rabbit-pass
+            - name: AUTOSCALING
+              value: >
+                3|10|5|development|example|example.queue;
+                3|5|3|development|example2|example2.queue
+            - name: LOGS
+              value: HIGH
+            - name: SLACK_HOOK
+              value: SLACK_HOOK
