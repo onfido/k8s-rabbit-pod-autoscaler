@@ -33,10 +33,12 @@ IFS=';' read -ra autoscalingArr <<< "$autoscalingNoWS"
 
 while true; do
   for autoscaler in "${autoscalingArr[@]}"; do
-    IFS='|' read minPods maxPods mesgPerPod namespace deployment queueName <<< "$autoscaler"
+    IFS='|' read minPods maxPods mesgPerPod namespace deployment queueName vhostName <<< "$autoscaler"
+
+    vhostName=${vhostName:-"%2f"}
 
     queueMessagesJson=$(curl -s -S --retry 3 --retry-delay 3 -u "$RABBIT_USER:$RABBIT_PASS" \
-      $RABBIT_HOST:15672/api/queues/%2f/$queueName)
+      $RABBIT_HOST:15672/api/queues/%2f$vhostName/$queueName)
 
     if [[ $? -eq 0 ]]; then
       queueMessages=$(echo $queueMessagesJson | jq '.messages')

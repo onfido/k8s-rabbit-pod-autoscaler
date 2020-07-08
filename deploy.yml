@@ -27,23 +27,21 @@ subjects:
     name: rabbit-pod-autoscaler
     namespace: kube-system
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: rabbit-pod-autoscaler
   namespace: kube-system
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      app: rabbit-pod-autoscaler
   template:
     metadata:
       labels:
         app: rabbit-pod-autoscaler
     spec:
-      nodeSelector:
-        kubernetes.io/role: master
-      tolerations:
-        - effect: NoSchedule
-          key: node-role.kubernetes.io/master
       serviceAccountName: rabbit-pod-autoscaler
       containers:
         - name: rabbit-pod-autoscaler
@@ -70,8 +68,8 @@ spec:
                   key: rabbit-pass
             - name: AUTOSCALING
               value: >
-                3|10|5|development|example|example.queue;
-                3|5|3|development|example2|example2.queue
+                3|10|5|development|example|example.queue|vhost;
+                3|5|3|development|example2|example2.queue|vhost
             - name: LOGS
               value: HIGH
             - name: SLACK_HOOK
