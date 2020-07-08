@@ -10,7 +10,7 @@ This Pod runs in the `kube-system` namespace on k8s master nodes.
 
 ### Requirements
 
-- The virtual host in RabbitMQ for queues has to be `/`.
+- The virtual host in RabbitMQ for queues has to start with `/`, ie `/vhost_name`.
 - Namespace(s), deployment(s) or queue(s) defined in `AUTOSCALING` env var can't have `|` or `;` symbols in name(s).
 
 ### Env vars
